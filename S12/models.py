@@ -3,12 +3,10 @@ from peewee import *
 db = SqliteDatabase('S12.db')
 
 class BaseModel(Model):
-    """Базовая модель для всех таблиц"""
     class Meta:
         database = db
 
 class AssessmentForm:
-    """Формы отчетности (аналог Enum)"""
     EXAM = 'exam'
     CREDIT = 'credit'
     
@@ -42,7 +40,6 @@ class Group(BaseModel):
     
     @property
     def full_name(self):
-        """Полное наименование группы (пример: 3-2П9)"""
         return f"{self.number}-{self.prefix}"
     
     def __str__(self):
@@ -55,7 +52,6 @@ class Group(BaseModel):
         )
 
 class Discipline(BaseModel):
-    """Дисциплина (учебный предмет)"""
     name = CharField(max_length=255, unique=True, verbose_name="Название")
     is_active = BooleanField(default=True, verbose_name="Активна")
     
@@ -66,7 +62,6 @@ class Discipline(BaseModel):
         table_name = 'disciplines'
 
 class Semester(BaseModel):
-    """Семестр (номер + учебный год)"""
     semester_number = IntegerField(verbose_name="Номер семестра")
     academic_year = CharField(max_length=9, verbose_name="Учебный год")
     
@@ -99,7 +94,6 @@ class Curriculum(BaseModel):
     
     @property
     def total_hours(self):
-        """Общее количество часов (теория + практика) - вычисляемое поле"""
         return self.theory_hours + self.practice_hours
     
     def __str__(self):
