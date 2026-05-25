@@ -69,16 +69,19 @@
 
 | Parameter | Description | Type |
 |-----------|-------------|------|
-| `id` | ID записи | Integer |
+| `id` | ID записи учебного плана | Integer |
+| `discipline_id` | ID дисциплины | Integer |
 | `discipline_name` | Название дисциплины | String |
-| `group_name` | Наименование группы | String |
+| `group_id` | ID группы | Integer |
+| `group_name` | Название группы | String |
 | `semester_number` | Номер семестра | Integer |
 | `theory_hours` | Часы теории | Integer |
 | `practice_hours` | Часы практики | Integer |
 | `assessment_form` | Форма отчетности | Enum |
-| `total_hours` | Теория + практика | Integer |
+| `total_hours` | Итого часов (теория + практика) | Integer |
 | `is_active` | Активна ли запись | Boolean |
 
+**Примечание:** Поле `total_hours` является **вычисляемым** (виртуальным) и не хранится в базе данных. Оно рассчитывается как `theory_hours + practice_hours`.
 
 ## Получение списка Curriculum с фильтрацией
 
