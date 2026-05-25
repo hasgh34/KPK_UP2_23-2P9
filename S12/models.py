@@ -27,11 +27,16 @@ class Curriculum(BaseModel):
         null=False, 
         constraints=[Check('semester_number BETWEEN 1 AND 8')]
     )
-    
+
     theory_hours = IntegerField(null=False, default=0, constraints=[Check('theory_hours >= 0')])
     practice_hours = IntegerField(null=False, default=0, constraints=[Check('practice_hours >= 0')])
 
-    assessment_form = CharField(max_length=10, null=False, default='exam')
+    assessment_form = CharField(
+        max_length=10, 
+        null=False, 
+        default='exam',
+        constraints=[Check("assessment_form IN ('exam', 'credit')")]
+    )
 
     is_active = BooleanField(default=True, null=False)
     
@@ -43,7 +48,7 @@ class Curriculum(BaseModel):
     
     def save(self, *args, **kwargs):
         self.updated_at = datetime.now()
-        return super().save(*args, **kwargs)
+        return super().save(*args, **kwargs) 
     
     @property
     def total_hours(self):
@@ -57,4 +62,4 @@ def create_tables():
 
 if __name__ == "__main__":
     create_tables()
-    print(" База данных и таблицы созданы успешно!")
+    print("База данных и таблицы созданы успешно!") 
