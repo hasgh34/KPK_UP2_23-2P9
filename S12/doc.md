@@ -8,14 +8,14 @@
 
 ### Информация, требуемая для создания Curriculum
 
-| Parameter | Description | Required | Type | Constraint | Default |
-|-----------|-------------|----------|------|-------------|---------|
-| `discipline_id` | ID дисциплины | Yes | Integer | > 0 | |
-| `group_id` | ID группы | Yes | Integer | > 0 | |
-| `semester_number` | Номер семестра | Yes | Integer | 1..8 | |
-| `theory_hours` | Часы теории | Yes | Integer | ≥ 0 | |
-| `practice_hours` | Часы практики | Yes | Integer | ≥ 0 | |
-| `assessment_form` | Форма отчетности | Yes | Enum | `exam` / `credit` | |
+| Parameter | Required | Type | Constraint | Default |
+|-----------|----------|------|-------------|---------|
+| `discipline_id` | Yes | Integer | > 0 | |
+| `group_id` | Yes | Integer | > 0 | |
+| `semester_number` | Yes | Integer | 1..8 | |
+| `theory_hours` | Yes | Integer | ≥ 0 | |
+| `practice_hours` | Yes | Integer | ≥ 0 | |
+| `assessment_form` | Yes | Enum | `exam` / `credit` | |
 
 **Unique constraint:**  
 `(group_id, discipline_id, semester_number)` — одна дисциплина не может быть дважды у одной группы в одном семестре.
@@ -39,12 +39,12 @@
 
 ### Входные параметры
 
-| Parameter | Description | Required | Type | Constraint | Default |
-|-----------|-------------|----------|------|-------------|---------|
-| `id` | ID записи учебного плана | Yes | Integer | > 0 | |
-| `theory_hours` | Часы теории | No | Integer | ≥ 0 | `NULL` |
-| `practice_hours` | Часы практики | No | Integer | ≥ 0 | `NULL` |
-| `assessment_form` | Форма отчетности | No | Enum | `exam` / `credit` | `NULL` |
+| Parameter | Required | Type | Constraint |
+|-----------|----------|------|-------------|
+| `id` | Yes | Integer | > 0 |
+| `theory_hours` | No | Integer | ≥ 0 |
+| `practice_hours` | No | Integer | ≥ 0 |
+| `assessment_form` | No | Enum | `exam` / `credit` |
 
 > **Примечание:** `discipline_id`, `group_id`, `semester_number` изменить нельзя.
 
@@ -77,20 +77,20 @@
 
 ### Возвращаемые данные
 
-| Parameter | Description | Type |
-|-----------|-------------|------|
-| `id` | ID записи учебного плана | Integer |
-| `discipline_id` | ID дисциплины | Integer |
-| `discipline_name` | Название дисциплины | String |
-| `group_id` | ID группы | Integer |
-| `group_name` | Название группы | String |
-| `semester_number` | Номер семестра | Integer |
-| `theory_hours` | Часы теории | Integer |
-| `practice_hours` | Часы практики | Integer |
-| `assessment_form` | Форма отчетности | Enum |
-| `is_active` | Активна ли запись | Boolean |
+| Parameter | Type |
+|-----------|------|
+| `id` | Integer |
+| `discipline_id` | Integer |
+| `discipline_name` | String |
+| `group_id` | Integer |
+| `group_name` | String |
+| `semester_number` | Integer |
+| `theory_hours` | Integer |
+| `practice_hours` | Integer |
+| `assessment_form` | Enum |
+| `is_active` | Boolean |
 
-> **Примечание:** Поле `total_hours` не возвращается, так как является вычисляемым и не хранится в БД. При необходимости клиент вычисляет его самостоятельно как `theory_hours + practice_hours`.
+> **Примечание:** Поле `total_hours` не возвращается, так как является вычисляемым и не хранится в БД.
 
 ---
 
@@ -98,19 +98,19 @@
 
 ### Входные параметры фильтрации
 
-| Parameter | Description | Type |
-|-----------|-------------|------|
-| `group_id` | ID группы | Integer |
-| `discipline_id` | ID дисциплины | Integer |
-| `semester_number` | Номер семестра | Integer |
-| `assessment_form` | `exam` / `credit` | Enum |
-| `theory_hours_min` | Мин. часов теории | Integer |
-| `theory_hours_max` | Макс. часов теории | Integer |
-| `practice_hours_min` | Мин. часов практики | Integer |
-| `practice_hours_max` | Макс. часов практики | Integer |
-| `is_active` | `true` / `false` | Boolean |
-| `page` | Номер страницы | Integer |
-| `page_size` | Размер страницы | Integer |
+| Parameter | Type |
+|-----------|------|
+| `group_id` | Integer |
+| `discipline_id` | Integer |
+| `semester_number` | Integer |
+| `assessment_form` | Enum |
+| `theory_hours_min` | Integer |
+| `theory_hours_max` | Integer |
+| `practice_hours_min` | Integer |
+| `practice_hours_max` | Integer |
+| `is_active` | Boolean |
+| `page` | Integer |
+| `page_size` | Integer |
 
 **Поведение по умолчанию:**
 - Если параметр `is_active` не указан, возвращаются **только активные записи** (`is_active = true`)
@@ -131,9 +131,10 @@
 | `assessment_form` | Enum |
 | `is_active` | Boolean |
 
-> **Примечание:** Поле `total_hours` не возвращается, так как является вычисляемым. Клиент вычисляет его самостоятельно.
+> **Примечание:** Поле `total_hours` не возвращается, так как является вычисляемым.
 
 ---
 
 ## ER-диаграмма
+
 ![Диаграмма](erd.png)
