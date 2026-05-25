@@ -12,13 +12,13 @@
 |-----------|----------|------|-------------|---------|
 | `discipline_id` | Yes | Integer | > 0 | |
 | `group_id` | Yes | Integer | > 0 | |
-| `semester_number` | Yes | Integer | 1..8 | |
+| `semester_id` | Yes | Integer | > 0 (ссылка на Semester) | |
 | `theory_hours` | Yes | Integer | ≥ 0 | |
 | `practice_hours` | Yes | Integer | ≥ 0 | |
 | `assessment_form` | Yes | Enum | `exam` / `credit` | |
 
 **Unique constraint:**  
-`(group_id, discipline_id, semester_number)` — одна дисциплина не может быть дважды у одной группы в одном семестре.
+`(group_id, discipline_id, semester_id)` — одна дисциплина не может быть дважды у одной группы в одном семестре.
 
 ### Возвращаемые данные при успешном создании
 
@@ -27,7 +27,7 @@
 | `id` | Integer |
 | `discipline_id` | Integer |
 | `group_id` | Integer |
-| `semester_number` | Integer |
+| `semester_id` | Integer |
 | `theory_hours` | Integer |
 | `practice_hours` | Integer |
 | `assessment_form` | Enum |
@@ -36,6 +36,9 @@
 ---
 
 ## Изменение Curriculum по ID
+
+**Допустимые для изменения поля:** `theory_hours`, `practice_hours`, `assessment_form`.  
+**Поля, которые нельзя изменить:** `discipline_id`, `group_id`, `semester_id`, `is_active` (деактивация выполняется через отдельный метод `soft_delete`).
 
 ### Входные параметры
 
@@ -46,7 +49,7 @@
 | `practice_hours` | No | Integer | ≥ 0 |
 | `assessment_form` | No | Enum | `exam` / `credit` |
 
-> **Примечание:** `discipline_id`, `group_id`, `semester_number` изменить нельзя.
+> **Примечание:** Поле `is_active` нельзя изменить через этот метод. Для деактивации используется отдельный метод `soft_delete`.
 
 ### Возвращаемые данные
 
@@ -55,7 +58,7 @@
 | `id` | Integer |
 | `discipline_id` | Integer |
 | `group_id` | Integer |
-| `semester_number` | Integer |
+| `semester_id` | Integer |
 | `theory_hours` | Integer |
 | `practice_hours` | Integer |
 | `assessment_form` | Enum |
@@ -63,13 +66,15 @@
 
 ---
 
-## Удаление Curriculum по ID
+## Удаление Curriculum по ID (мягкое удаление)
 
 Выполняет **мягкое удаление** — запись не удаляется физически, а устанавливается `is_active = False`.
 
 **Возвращаемое значение:**
 - `True` — запись успешно деактивирована (была активна)
 - `False` — запись уже была деактивирована или не найдена
+
+> **Примечание:** Реактивация (`is_active = True`) не предусмотрена в рамках данного сервиса.
 
 ---
 
@@ -85,6 +90,7 @@
 | `group_id` | Integer |
 | `group_name` | String |
 | `semester_number` | Integer |
+| `semester_academic_year` | String |
 | `theory_hours` | Integer |
 | `practice_hours` | Integer |
 | `assessment_form` | Enum |
@@ -126,6 +132,7 @@
 | `group_id` | Integer |
 | `group_name` | String |
 | `semester_number` | Integer |
+| `semester_academic_year` | String |
 | `theory_hours` | Integer |
 | `practice_hours` | Integer |
 | `assessment_form` | Enum |
