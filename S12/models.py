@@ -10,12 +10,14 @@ class BaseModel(Model):
 
 
 class AssessmentForm:
+    """Формы отчетности (Enum)"""
     EXAM = 'exam'
     CREDIT = 'credit'
     CHOICES = [EXAM, CREDIT]
 
 
 class Group(BaseModel):
+    """Группа студентов"""
     id = AutoField(primary_key=True)
     name = CharField(max_length=100, unique=True, null=False)
 
@@ -24,6 +26,7 @@ class Group(BaseModel):
 
 
 class Discipline(BaseModel):
+    """Дисциплина"""
     id = AutoField(primary_key=True)
     name = CharField(max_length=200, unique=True, null=False)
 
@@ -31,16 +34,26 @@ class Discipline(BaseModel):
         table_name = 'disciplines'
 
 
+class Semester(BaseModel):
+    """Семестр"""
+    id = AutoField(primary_key=True)
+    semester_number = IntegerField(null=False, constraints=[Check('semester_number BETWEEN 1 AND 8')])
+    academic_year = CharField(max_length=9, null=False)
+
+    class Meta:
+        table_name = 'semesters'
+        constraints = [SQL('UNIQUE(semester_number, academic_year)')]
+
+
 class Curriculum(BaseModel):
     id = AutoField(primary_key=True)
 
-    group_id = IntegerField(null=False)  
-    discipline_id = IntegerField(null=False)  
+    # Внешние ключи (NOT NULL)
+    group = ForeignKeyField(Group, backref='curriculums', on_delete='CASCADE', null=False)
+    discipline = ForeignKeyField(Discipline, backref='curriculums', on_delete='CASCADE', null=False)
+    semester = ForeignKeyField(Semester, backref='curriculums', on_delete='RESTRICT', null=False)
 
-    semester_number = IntegerField(
-        null=False,
-        constraints=[Check('semester_number BETWEEN 1 AND 8')]
-    )
+    # Поля с ограничениями (NOT NULL, без default)
     theory_hours = IntegerField(
         null=False,
         constraints=[Check('theory_hours >= 0')]
@@ -55,24 +68,24 @@ class Curriculum(BaseModel):
         constraints=[Check("assessment_form IN ('exam', 'credit')")]
     )
 
+    # Мягкое удаление
     is_active = BooleanField(default=True, null=False)
 
     class Meta:
         table_name = 'curriculum'
         constraints = [
-            SQL('UNIQUE(group_id, discipline_id, semester_number)')
+            SQL('UNIQUE(group_id, discipline_id, semester_id)')
         ]
         indexes = (
             (('group_id',), False),
             (('discipline_id',), False),
-            (('semester_number',), False),
+            (('semester_id',), False),
             (('is_active',), False),
         )
 
-
     @classmethod
     def _validate_required_fields(cls, **kwargs):
-        required_fields = ['group_id', 'discipline_id', 'semester_number', 
+        required_fields = ['group', 'discipline', 'semester', 
                           'theory_hours', 'practice_hours', 'assessment_form']
         missing = [f for f in required_fields if f not in kwargs or kwargs[f] is None]
         if missing:
@@ -86,43 +99,53 @@ class Curriculum(BaseModel):
             raise ValueError(f"practice_hours должно быть >= 0, получено {practice_hours}")
 
     @classmethod
-    def _validate_semester(cls, semester_number):
-        if not (1 <= semester_number <= 8):
-            raise ValueError(f"semester_number должно быть от 1 до 8, получено {semester_number}")
-
-    @classmethod
     def _validate_assessment_form(cls, assessment_form):
         if assessment_form not in AssessmentForm.CHOICES:
             raise ValueError(f"assessment_form должно быть 'exam' или 'credit', получено {assessment_form}")
 
-
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'discipline_id': self.discipline.id,
+            'discipline_name': self.discipline.name,
+            'group_id': self.group.id,
+            'group_name': self.group.name,
+            'semester_id': self.semester.id,
+            'semester_number': self.semester.semester_number,
+            'semester_academic_year': self.semester.academic_year,
+            'theory_hours': self.theory_hours,
+            'practice_hours': self.practice_hours,
+            'assessment_form': self.assessment_form,
+            'is_active': self.is_active
+        }
 
     @classmethod
-    def create_curriculum(cls, **kwargs):
-        cls._validate_required_fields(**kwargs)
+    def create_curriculum(cls, group, discipline, semester, theory_hours, practice_hours, assessment_form):
+        cls._validate_required_fields(
+            group=group, discipline=discipline, semester=semester,
+            theory_hours=theory_hours, practice_hours=practice_hours,
+            assessment_form=assessment_form
+        )
 
-        cls._validate_semester(kwargs['semester_number'])
-        cls._validate_hours(kwargs['theory_hours'], kwargs['practice_hours'])
-        cls._validate_assessment_form(kwargs['assessment_form'])
+        cls._validate_hours(theory_hours, practice_hours)
+        cls._validate_assessment_form(assessment_form)
 
-        return cls.create(**kwargs)
+        record = cls.create(
+            group=group,
+            discipline=discipline,
+            semester=semester,
+            theory_hours=theory_hours,
+            practice_hours=practice_hours,
+            assessment_form=assessment_form
+        )
+
+        return record.to_dict()
 
     @classmethod
     def get_by_id_with_names(cls, record_id):
         try:
             record = cls.get_by_id(record_id)
-            return {
-                'id': record.id,
-                'discipline_id': record.discipline_id,
-                'discipline_name': f"Дисциплина_{record.discipline_id}",  
-                'group_id': record.group_id,
-                'group_name': f"Группа_{record.group_id}",  
-                'semester_number': record.semester_number,
-                'theory_hours': record.theory_hours,
-                'practice_hours': record.practice_hours,
-                'assessment_form': record.assessment_form,
-                'is_active': record.is_active
-            }
+            return record.to_dict()
         except DoesNotExist:
             return None
 
@@ -134,7 +157,9 @@ class Curriculum(BaseModel):
         return True
 
     def update_fields(self, **kwargs):
-        forbidden_fields = ['group_id', 'discipline_id', 'semester_number', 'id', 'is_active']
+        # Запрещённые поля
+        forbidden_fields = ['group', 'group_id', 'discipline', 'discipline_id', 
+                           'semester', 'semester_id', 'id', 'is_active']
 
         for field in forbidden_fields:
             if field in kwargs:
@@ -155,7 +180,7 @@ class Curriculum(BaseModel):
                 setattr(self, key, value)
 
         self.save()
-        return self
+        return self.to_dict()
 
     @classmethod
     def get_filtered_list(cls, filters=None, page=1, page_size=20):
@@ -172,11 +197,15 @@ class Curriculum(BaseModel):
             query = query.where(cls.group_id == filters['group_id'])
         if filters.get('discipline_id') is not None:
             query = query.where(cls.discipline_id == filters['discipline_id'])
+        if filters.get('semester_id') is not None:
+            query = query.where(cls.semester_id == filters['semester_id'])
         if filters.get('semester_number') is not None:
-            query = query.where(cls.semester_number == filters['semester_number'])
+            query = query.where(cls.semester_id << Semester.select(Semester.id).where(
+                Semester.semester_number == filters['semester_number']))
         if filters.get('assessment_form') is not None:
             query = query.where(cls.assessment_form == filters['assessment_form'])
 
+        # Диапазоны часов
         if filters.get('theory_hours_min') is not None:
             query = query.where(cls.theory_hours >= filters['theory_hours_min'])
         if filters.get('theory_hours_max') is not None:
@@ -196,20 +225,7 @@ class Curriculum(BaseModel):
         offset = (page - 1) * page_size
         query = query.offset(offset).limit(page_size)
 
-        items = []
-        for record in query:
-            items.append({
-                'id': record.id,
-                'discipline_id': record.discipline_id,
-                'discipline_name': f"Дисциплина_{record.discipline_id}",  # Заглушка
-                'group_id': record.group_id,
-                'group_name': f"Группа_{record.group_id}",  # Заглушка
-                'semester_number': record.semester_number,
-                'theory_hours': record.theory_hours,
-                'practice_hours': record.practice_hours,
-                'assessment_form': record.assessment_form,
-                'is_active': record.is_active
-            })
+        items = [record.to_dict() for record in query]
 
         return {
             'items': items,
@@ -219,17 +235,21 @@ class Curriculum(BaseModel):
             'total_pages': (total + page_size - 1) // page_size if total > 0 else 0
         }
 
-    def __str__(self):
-        return f"Group_{self.group_id} - Discipline_{self.discipline_id} ({self.semester_number} семестр)"
-
-
 def create_tables():
-    """Создаёт таблицы в базе данных"""
     db.connect()
-    db.create_tables([Group, Discipline, Curriculum], safe=True)
+    db.create_tables([Group, Discipline, Semester, Curriculum], safe=True)
     db.close()
+
+
+def add_default_data():
+    if Semester.select().count() == 0:
+        for year in range(2024, 2026):
+            for sem in range(1, 5):
+                Semester.create(semester_number=sem, academic_year=f"{year}-{year+1}")
+        print("✓ Семестры добавлены")
 
 
 if __name__ == "__main__":
     create_tables()
+    add_default_data()
     print("База данных и таблицы созданы успешно!")
